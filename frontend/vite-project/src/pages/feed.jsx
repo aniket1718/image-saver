@@ -1,29 +1,57 @@
 
-import React, { useState , useEffect } from "react";
-import axios from "axios"
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+const API_URL =
+    import.meta.env.VITE_API_URL ||
+    "https://image-saver-i7uh.onrender.com";
 
 const Feed = () => {
-    const [posts, setPosts] = useState([
-        {
-            _id: "1",
-            image: "https://ik.imagekit.io/fgomzydwl/tr:n-ik_ml_thumbnail/image_W3KSxRurx.jpg"
-        }
-    ]);
-    useEffect(()=>{
-       axios.get("http://localhost:3000/posts")
-       .then((res)=>{
-        console.log(res.data)
-       })
-    },[])
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    useEffect(()=>{
-        axios.get("http://localhost:3000/posts")
-        .then((res)=>{
-         setPosts(res.data.posts)
-        })
-    },[])
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                const res = await axios.get(`${API_URL}/posts`);
 
+                setPosts(res.data.posts || []);
+            } catch (err) {
+                console.error(
+                    "Error fetching posts:",
+                    err.response?.data || err.message
+                );
 
+                setError(
+                    "Unable to load posts. Please try again later."
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPosts();
+    }, []);
+
+    if (loading) {
+        return (
+            <section className="feed-section">
+                <p>Loading posts...</p>
+            </section>
+        );
+    }
+
+    if (error) {
+        return (
+            <section className="feed-section">
+                <p>{error}</p>
+                <button onClick={() => window.location.reload()}>
+                    Retry
+                </button>
+            </section>
+        );
+    }
 
     return (
         <section className="feed-section">
@@ -32,9 +60,16 @@ const Feed = () => {
                     <div key={post._id} className="post-card">
                         <img
                             src={post.image}
-                            alt="Post"
+                            alt={post.caption || "Shared post"}
                             className="post-image"
+                            loading="lazy"
                         />
+
+                        {post.caption && (
+                            <p className="post-caption">
+                                {post.caption}
+                            </p>
+                        )}
                     </div>
                 ))
             ) : (
